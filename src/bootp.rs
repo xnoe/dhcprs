@@ -123,22 +123,22 @@ impl From<RawBOOTPPacket> for BOOTPPacket {
             ciaddr: if item.ciaddr == 0 {
                 None
             } else {
-                Some(std::net::Ipv4Addr::from(item.ciaddr))
+                Some(std::net::Ipv4Addr::from(u32::from_be(item.ciaddr)))
             },
             yiaddr: if item.yiaddr == 0 {
                 None
             } else {
-                Some(std::net::Ipv4Addr::from(item.yiaddr))
+                Some(std::net::Ipv4Addr::from(u32::from_be(item.yiaddr)))
             },
             siaddr: if item.siaddr == 0 {
                 None
             } else {
-                Some(std::net::Ipv4Addr::from(item.siaddr))
+                Some(std::net::Ipv4Addr::from(u32::from_be(item.siaddr)))
             },
             giaddr: if item.giaddr == 0 {
                 None
             } else {
-                Some(std::net::Ipv4Addr::from(item.giaddr))
+                Some(std::net::Ipv4Addr::from(u32::from_be(item.giaddr)))
             },
             chaddr: MacAddress::from_bytes(&item.chaddr[0..6]).unwrap(),
             sname: item.sname,
