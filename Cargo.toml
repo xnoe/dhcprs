@@ -13,6 +13,4 @@ name = "dhcprs"
 path = "src/lib.rs"
 
 [dependencies]
-nix = "0.25.0"
 eui48 = "1.1.0"
-libc = "0.2.133"
