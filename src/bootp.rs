@@ -85,22 +85,22 @@ impl From<BOOTPPacket> for RawBOOTPPacket {
             secs: item.secs,
             flags: item.flags,
             ciaddr: if item.ciaddr.is_some() {
-                item.ciaddr.unwrap().into()
+                u32::to_be(item.ciaddr.unwrap().into())
             } else {
                 0
             },
             yiaddr: if item.yiaddr.is_some() {
-                item.yiaddr.unwrap().into()
+                u32::to_be(item.yiaddr.unwrap().into())
             } else {
                 0
             },
             siaddr: if item.siaddr.is_some() {
-                item.siaddr.unwrap().into()
+                u32::to_be(item.siaddr.unwrap().into())
             } else {
                 0
             },
             giaddr: if item.giaddr.is_some() {
-                item.giaddr.unwrap().into()
+                u32::to_be(item.giaddr.unwrap().into())
             } else {
                 0
             },
