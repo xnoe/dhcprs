@@ -166,10 +166,10 @@ pub enum DHCPOption {
 
     /*// RFC4833
     TimezonePOSIX(String), // 100 N IEEE 1003.1 String
-    TimezoneDB(String),    // 101 N Reference to TZ Database
+    TimezoneDB(String),    // 101 N Reference to TZ Database*/
 
     // RFC3442
-    ClasslessStaticRoute(Vec<(Ipv4Addr, u32, Ipv4Addr)>), // 121 n d1 ... dN r1 r2 r3 r4 d1 ... dN r1 r2 r3 r4*/
+    ClasslessStaticRoute(Vec<(Ipv4Addr, u8, Ipv4Addr)>), // 121 n d1 ... dN r1 r2 r3 r4 d1 ... dN r1 r2 r3 r4
 
     // Catchall
     Option(u8, Vec<u8>),
@@ -182,6 +182,12 @@ macro_rules! break_unwrap {
             _ => break,
         }
     };
+}
+
+macro_rules! div_ceil {
+    ($lhs:expr, $rhs:expr) => {
+        $lhs / $rhs + if $lhs % $rhs != 0 { 1 } else { 0 }
+    }
 }
 
 impl DHCPOption {
@@ -1230,6 +1236,28 @@ impl DHCPOption {
                     options.push(DHCPOption::STDAServer(addresses));
                 }
 
+                121 => {
+                    let mut length = break_unwrap!(iterator.next());
+                    let mut routes: Vec<(Ipv4Addr, u8, Ipv4Addr)> = Vec::new();
+
+                    while length > 0 {
+                        let prefix_length = break_unwrap!(iterator.next());
+                        let descriptor_length = div_ceil!(prefix_length, 8);
+
+                        let mut prefix_octets: [u8; 4] = [0;4];
+                        for count in 0..descriptor_length {
+                            prefix_octets[count as usize] = break_unwrap!(iterator.next());
+                        }
+
+                        let router = Ipv4Addr::new(break_unwrap!(iterator.next()),break_unwrap!(iterator.next()),break_unwrap!(iterator.next()),break_unwrap!(iterator.next()));
+
+                        routes.push((Ipv4Addr::from(prefix_octets), prefix_length, router));
+                        length -= 1 + descriptor_length + 4;
+                    }
+
+                    options.push(DHCPOption::ClasslessStaticRoute(routes));
+                }
+
                 // Catchall for if we cannot decode the option to a specific enum variant.
                 n => {
                     let count = break_unwrap!(iterator.next());
@@ -1800,6 +1828,17 @@ impl DHCPOption {
                     bytes.push(n);
                     bytes.push(b.len() as u8);
                     bytes.extend_from_slice(&b);
+                }
+
+                DHCPOption::ClasslessStaticRoute(routes) => {
+                    bytes.push(121);
+                    bytes.push(routes.iter().fold(0, |acc, (_, prefix_length, _)| acc + 1 + div_ceil!(prefix_length, 8) + 4));
+                    for (prefix, prefix_length, router) in routes {
+                        let descriptor_length = div_ceil!(prefix_length, 8);
+                        bytes.push(prefix_length);
+                        bytes.extend_from_slice(&prefix.octets()[..descriptor_length as usize]);
+                        bytes.extend_from_slice(&router.octets());
+                    }
                 }
             }
         }
